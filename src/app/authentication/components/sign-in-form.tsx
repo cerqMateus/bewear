@@ -44,18 +44,33 @@ const SignInForm = () => {
   });
 
   async function onSubmit(values: FormValues) {
-    const result = await authClient.signIn.email({
+    await authClient.signIn.email({
       email: values.email,
       password: values.password,
+      fetchOptions: {
+        onSuccess: () => {
+          router.push("/");
+        },
+        onError: (error) => {
+          if (error.error.code === "USER_NOT_FOUND") {
+            toast.error("Usuário não encontrado. Verifique suas credenciais.");
+            return form.setError("email", {
+              message: "Usuário não encontrado. Verifique suas credenciais.",
+            });
+          }
+          if (error.error.code === "INVALID_EMAIL_OR_PASSWORD") {
+            toast.error("E-mail ou senha inválidos.");
+            form.setError("password", {
+              message: "E-mail ou senha inválidos.",
+            });
+            return form.setError("email", {
+              message: "E-mail ou senha inválidos.",
+            });
+          }
+          toast.error(error.error.message);
+        },
+      },
     });
-
-    if (result.error) {
-      toast.error(result.error.message || "Erro ao realizar login.");
-      return;
-    }
-
-    toast.success("Logado com sucesso!");
-    router.push("/");
   }
 
   return (
